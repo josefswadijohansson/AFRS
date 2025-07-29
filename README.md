@@ -3,6 +3,12 @@
 
 Just a fun side electronic project, an Automatic Fishing Reel Spooler
 
+## Software Used
+
+- [FreeCAD 1.0](https://www.freecad.org/)
+- [OrcaSlicer](https://orcaslicer.com/)
+- [Blender](https://www.blender.org/)
+
 
 ## License
 
