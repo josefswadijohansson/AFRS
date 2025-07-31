@@ -9,6 +9,8 @@ Just a fun side electronic project, an Automatic Fishing Reel Spooler
 - [OrcaSlicer](https://orcaslicer.com/)
 - [Blender](https://www.blender.org/)
 
+## Concept Picture
+![alt text](https://github.com/josefswadijohansson/AFRS/blob/main/Concept%20pictures/v3/AFRS_concept_v3.png)
 
 ## License
 
