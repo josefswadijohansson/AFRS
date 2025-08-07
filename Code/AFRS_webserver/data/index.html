@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AFRS 1.3</title>
+    <style>
+        body{font-family:sans-serif;margin:20px}
+        button,input{padding:8px 12px;margin:4px}
+        .group
+        {
+            display: flex;
+            flex-direction: row;
+            gap: 10px;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="group">
+        <div id="system-state"> State : IDLE </div>
+    </div>
+    <div class="group">
+        <div id="carriage-position-label">Carriage Position : 0.0 mm </div>
+    </div>
+
+    <div class="group">
+        <button onclick="sendCommand('calibrate')" id="system-calibrate-button">System Calibration Mode</button>
+    </div>
+
+    <div class="group">
+        <button onclick="sendCommand('reel_cal')" id="reel-calibratation-button">Reel Calibration Mode</button>
+    </div>
+    <div class="group">
+        Target Position : <input type="number" id="target-position-input" value="0">
+        <button onclick="moveToPosition()" id="move-button">Move</button>
+        <button onclick="adjustSetPosition('adjust-set-start-button')" id="adjust-set-start-button">Set Start</button>
+        <button onclick="adjustSetPosition('adjust-set-end-button')" id="adjust-set-end-button">Set End</button>
+    </div>
+    <div class="group">
+        <button onclick="adjustPosition(1)">+1mm</button>
+        <button onclick="adjustPosition(-1)">-1mm</button>
+    </div>
+    <div class="group">
+        Start: <input type="number" id="starter-position-input" value="0" onchange="setChangedPosition('starter-position-input')">
+        <button onclick="setPosition('starter-position-input')" id="start-set-button">Set</button>
+        <input type="checkbox" id="starter-position-input-set" disabled>
+        End: <input type="number" id="end-position-input" value="0" onchange="setChangedPosition('end-position-input')">
+        <button onclick="setPosition('end-position-input')" id="end-set-button">Set</button>
+        <input type="checkbox"id="end-position-input-set" disabled>
+    </div>
+    <div class="group">
+        <button onclick="sendCommand('start')" id="start-reeling-button">Start Reeling</button>
+        <button onclick="sendCommand('stop')" id="stop-reeling-button">Stop Reeling</button>
+    </div>
+
+    <script>
+        let currentState = 'IDLE';
+        let currentPosition = 0;
+        let railLength = 50;
+
+        let systemCalibrated = false;
+        let reelCalibrated = false;
+
+        let starterSet = false;
+        let endSet = false;
+
+        // Update UI based on system state
+        function updateUI() {
+            // Update state indicator
+            const stateElement = document.getElementById('system-state');
+            stateElement.textContent = `State : ${currentState}`;
+
+            document.getElementById("starter-position-input-set").checked = starterSet;
+            document.getElementById("end-position-input-set").checked = endSet;
+            
+            // Update position
+            document.getElementById('carriage-position-label').textContent = `Carriage Position : ${currentPosition.toFixed(2)} mm`;
+            
+            if(!systemCalibrated){
+                document.getElementById('reel-calibratation-button').disabled = true;
+
+                document.getElementById('target-position-input').disabled = true;
+                document.getElementById('move-button').disabled = true;
+
+                document.getElementById('starter-position-input').disabled = true;
+                document.getElementById('start-set-button').disabled = true;
+                document.getElementById('end-position-input').disabled = true;
+                document.getElementById('end-set-button').disabled = true;
+
+                document.getElementById('start-reeling-button').disabled = true;
+                document.getElementById('stop-reeling-button').disabled = true;
+            }
+            else if(systemCalibrated && !reelCalibrated && currentState == "IDLE"){
+                document.getElementById('system-calibrate-button').disabled = false;
+                document.getElementById('reel-calibratation-button').disabled = false;
+
+                document.getElementById('target-position-input').disabled = true;
+                document.getElementById('move-button').disabled = true;
+
+                document.getElementById('starter-position-input').disabled = true;
+                document.getElementById('start-set-button').disabled = true;
+                document.getElementById('end-position-input').disabled = true;
+                document.getElementById('end-set-button').disabled = true;
+
+                document.getElementById('start-reeling-button').disabled = true;
+                document.getElementById('stop-reeling-button').disabled = true;
+            }
+            else if(systemCalibrated && currentState == "CALIBRATE_REEL"){
+                document.getElementById('system-calibrate-button').disabled = true;
+                document.getElementById('reel-calibratation-button').disabled = false;
+
+                document.getElementById('target-position-input').disabled = false;
+                document.getElementById('move-button').disabled = false;
+
+                document.getElementById('starter-position-input').disabled = false;
+                document.getElementById('start-set-button').disabled = false;
+                document.getElementById('end-position-input').disabled = false;
+                document.getElementById('end-set-button').disabled = false;
+
+                document.getElementById('start-reeling-button').disabled = true;
+                document.getElementById('stop-reeling-button').disabled = true;
+            }
+            else if(systemCalibrated && reelCalibrated && currentState == "IDLE"){
+                document.getElementById('system-calibrate-button').disabled = false;
+                document.getElementById('reel-calibratation-button').disabled = false;
+
+                document.getElementById('target-position-input').disabled = true;
+                document.getElementById('move-button').disabled = true;
+
+                document.getElementById('starter-position-input').disabled = true;
+                document.getElementById('start-set-button').disabled = true;
+                document.getElementById('end-position-input').disabled = true;
+                document.getElementById('end-set-button').disabled = true;
+
+                document.getElementById('start-reeling-button').disabled = false;
+                document.getElementById('stop-reeling-button').disabled = false;
+            }
+        
+        }
+
+        function sendCommand(cmd) {
+            fetch(`/cmd?code=${cmd}`)
+            .catch(e => console.error('Error:', e));
+        }
+
+        function moveToPosition() {
+            const pos = document.getElementById('target-position-input').value;
+            fetch(`/move?pos=${pos}`)
+            .catch(e => console.error('Error:', e));
+        }
+
+        function adjustPosition(delta) {
+            const currentTargetPosition = document.getElementById('target-position-input').value;
+            let newTargetPosition = parseFloat(currentTargetPosition) + delta;
+
+            if(newTargetPosition < 0){
+                newTargetPosition = 0;
+            } else if (newTargetPosition > railLength)
+            {
+                newTargetPosition = railLength;
+            }
+
+            document.getElementById('target-position-input').value = newTargetPosition;
+        }
+
+        function adjustSetPosition(type){
+            let newVal = document.getElementById("target-position-input").value;
+
+            if(newVal < 0){
+                newVal = 0;
+            } else if (newVal > railLength)
+            {
+                newVal = railLength;
+            }
+
+            if(type === "adjust-set-start-button"){ 
+                document.getElementById("starter-position-input").value = newVal;
+            } else if(type === "adjust-set-end-button"){
+                document.getElementById("end-position-input").value = newVal;
+            }
+        }
+
+        function setPosition(type) {
+            const val = document.getElementById(type).value;
+            fetch(`/set?type=${type}&val=${val}`)
+            .catch(e => console.error('Error:', e));
+        }
+        
+        function setChangedPosition(type){
+            let inputValue = parseFloat(document.getElementById(type).value);
+
+            if(inputValue < 0){
+                inputValue = 0;
+            }
+            else if(inputValue > railLength){
+                inputValue = railLength;
+            }
+
+            document.getElementById(type).value = inputValue;
+        }
+    
+        // Get system status from ESP32
+        function getStatus() {
+            fetch('/status')
+            .then(response => response.json())
+            .then(data => {
+                currentState = data.state;
+                currentPosition = data.position;
+                railLength = data.railLength;
+                
+                // Update workflow states based on device
+                systemCalibrated = (railLength > 0);
+                starterSet = data.starterSet;
+                endSet = data.endSet;
+                reelCalibrated = (data.starterSet && data.endSet);
+                
+                updateUI();
+            })
+            .catch(error => console.error('Error fetching status:', error));
+        }
+
+        // Initialize the controller
+        function initController() {
+            // Get initial status
+            getStatus();
+            
+            // Set up periodic status updates
+            setInterval(getStatus, 1000);
+        }
+        
+        // Initialize when page loads
+        window.onload = initController;
+    </script>
+</body>
+</html>
