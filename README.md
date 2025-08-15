@@ -1,7 +1,12 @@
 # AFRS
+
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 
 Just a fun side electronic project, an Automatic Fishing Reel Spooler(not for when you are on the lake, but before when you are putting line on the fishing reel).
+
+## Demostration
+
+[Showcasing Video](https://www.youtube.com/shorts/x-qOwM7sNGY)
 
 ## Software Used
 
@@ -18,6 +23,14 @@ Just a fun side electronic project, an Automatic Fishing Reel Spooler(not for wh
 
 ## Concept Picture
 ![alt text](https://github.com/josefswadijohansson/AFRS/blob/main/Concept%20pictures/v3/AFRS_concept_v3.png)
+
+
+## End Result
+<p float="left">
+  <img src="https://github.com/josefswadijohansson/AFRS/blob/main/Pictures/pic1.jpg" width="400" height="400" />
+  <img src="https://github.com/josefswadijohansson/AFRS/blob/main/Pictures/pic2.jpg" width="400" height="400" />
+  <img src="https://github.com/josefswadijohansson/AFRS/blob/main/Pictures/screenshot_webserver.png" width="400" height="400" />
+</p>
 
 ## Components used
 
